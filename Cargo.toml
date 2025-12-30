@@ -1,0 +1,36 @@
+[package]
+name = "voxel_renderer"
+version = "0.1.0"
+edition = "2024"
+description = "a voxel raytracer made with wgpu and winit"
+readme = "README.md"
+homepage = "https://github.com/Omay238/voxel_renderer"
+repository = "https://github.com/Omay238/voxel_renderer"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anyhow = "1.0"
+winit = { version = "0.30", features = ["android-native-activity"] }
+env_logger = "0.11"
+log = "0.4"
+wgpu = "28.0"
+pollster = "0.4"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_log = "1.0"
+console_error_panic_hook = "0.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1"
+console_log = "1.0"
+wgpu = { version = "28.0", features = ["webgl"]}
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Element",
+]}

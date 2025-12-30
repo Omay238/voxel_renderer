@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Voxel Renderer</title>
+        <style>
+            * {
+                padding: 0;
+                margin: 0;
+            }
+            canvas {
+                background-color: black;
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <script type="module">
+            import init from './pkg/voxel_renderer.js';
+            init().then(() => {
+                console.log("loaded!");
+            });
+        </script>
+    </body>
+</html>
