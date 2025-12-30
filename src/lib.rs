@@ -18,6 +18,7 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
     window: Arc<Window>,
+    background_color: wgpu::Color,
 }
 
 impl State {
@@ -83,6 +84,7 @@ impl State {
             config,
             is_surface_configured: false,
             window,
+            background_color: wgpu::Color::WHITE,
         })
     }
 
@@ -123,12 +125,7 @@ impl State {
                     depth_slice: None,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(self.background_color),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
@@ -143,6 +140,11 @@ impl State {
         output.present();
 
         Ok(())
+    }
+
+    fn handle_mouse_moved(&mut self, x: f64, y: f64) {
+        self.background_color.r = x / self.config.width as f64;
+        self.background_color.g = y / self.config.height as f64;
     }
 
     fn handle_key(&self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
@@ -250,6 +252,9 @@ impl ApplicationHandler<State> for App {
                         log::error!("render error {}", e);
                     }
                 }
+            }
+            WindowEvent::CursorMoved { position, .. } => {
+                state.handle_mouse_moved(position.x, position.y)
             }
             WindowEvent::KeyboardInput {
                 event:
