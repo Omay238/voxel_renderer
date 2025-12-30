@@ -18,8 +18,10 @@ pub struct State {
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
     render_pipeline: wgpu::RenderPipeline,
+    alt_pipeline: wgpu::RenderPipeline,
     window: Arc<Window>,
     background_color: wgpu::Color,
+    triangle_color: bool,
 }
 
 impl State {
@@ -77,14 +79,14 @@ impl State {
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
-
-        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[],
                 immediate_size: 0,
             });
+
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
@@ -123,6 +125,45 @@ impl State {
             cache: None,
         });
 
+        let alt_shader = device.create_shader_module(wgpu::include_wgsl!("altshader.wgsl"));
+        let alt_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Alt Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &alt_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &alt_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview_mask: None,
+            cache: None,
+        });
+
         Ok(Self {
             surface,
             device,
@@ -130,8 +171,10 @@ impl State {
             config,
             is_surface_configured: false,
             render_pipeline,
+            alt_pipeline,
             window,
             background_color: wgpu::Color::WHITE,
+            triangle_color: false,
         })
     }
 
@@ -182,7 +225,12 @@ impl State {
                 multiview_mask: None,
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
+            if self.triangle_color {
+                render_pass.set_pipeline(&self.alt_pipeline);
+            } else {
+                render_pass.set_pipeline(&self.render_pipeline);
+            }
+
             render_pass.draw(0..3, 0..1);
         }
 
@@ -197,8 +245,11 @@ impl State {
         self.background_color.g = y / self.config.height as f64;
     }
 
-    fn handle_key(&self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
+    fn handle_key(&mut self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
         match (code, is_pressed) {
+            (KeyCode::Space, is_pressed) => {
+                self.triangle_color = is_pressed;
+            }
             (KeyCode::Escape, true) => event_loop.exit(),
             _ => {}
         }
